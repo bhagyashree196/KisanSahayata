@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kisan Sahayata - Farmer Support Portal</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+<!-- ===== TOP BAR / LANGUAGE SELECTOR ===== -->
+<div class="language-selector">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+
+      <div class="d-flex align-items-center">
+        <img src="images/logo.png" alt="Kisan Sahayata Logo" class="top-logo" />
+        <span class="ms-2 brand-name">Kisan Sahayata</span>
+      </div>
+
+      <select id="languageSwitcher" class="form-select lang-dropdown">
+        <option value="en">English</option>
+        <option value="hi">हिंदी</option>
+        <option value="mr">मराठी</option>
+      </select>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="hero-section">
+  <div class="container text-center">
+    <h1 id="welcomeText" class="hero-title">🌾 Kisan Sahayata</h1>
+    <p class="hero-subtitle">
+      Empowering Farmers with Government Schemes & Financial Support
+    </p>
+
+    <div class="row justify-content-center mt-5">
+      <div class="col-md-8">
+       
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== STATS SECTION ===== -->
+<div class="container stats-section">
+  <div class="row g-3 text-center">
+
+    <div class="col">
+      <div class="stat-card fade-in">
+        <i class="fas fa-file-alt stat-icon"></i>
+        <div class="stat-number">50+</div>
+        <div class="stat-label">Schemes</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="stat-card fade-in" style="animation-delay:0.1s;">
+        <i class="fas fa-coins stat-icon"></i>
+        <div class="stat-number">20+</div>
+        <div class="stat-label">Financial Support</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="stat-card fade-in" style="animation-delay:0.2s;">
+        <i class="fas fa-shield-alt stat-icon"></i>
+        <div class="stat-number">10+</div>
+        <div class="stat-label">Insurance</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="stat-card fade-in" style="animation-delay:0.3s;">
+        <i class="fas fa-map-marked-alt stat-icon"></i>
+        <div class="stat-number">2+</div>
+        <div class="stat-label">States</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="stat-card fade-in" style="animation-delay:0.4s;">
+        <i class="fas fa-clock stat-icon"></i>
+        <div class="stat-number">35+</div>
+        <div class="stat-label">Active</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== FEATURE CARDS ===== -->
+<div class="container mt-5">
+  <div class="row g-4">
+
+    <!-- Government Schemes -->
+    <div class="col-md-4">
+      <a href="javascript:void(0)" class="feature-card"
+         data-bs-toggle="modal" data-bs-target="#schemeModal">
+
+        <div class="feature-icon">
+          <i class="fas fa-file-alt"></i>
+        </div>
+
+        <h3 id="schemesBtn">📋 Government Schemes</h3>
+
+        <p id="schemesDesc">
+          Explore various agricultural schemes, eligibility criteria, benefits,
+          and application procedures tailored for your district.
+        </p>
+
+        <span class="badge bg-success">New Updates</span>
+        <span class="badge bg-primary">Maharashtra</span>
+      </a>
+    </div>
+
+    <!-- Financial Support -->
+    <div class="col-md-4">
+      <a href="javascript:void(0)" class="feature-card"
+         data-bs-toggle="modal" data-bs-target="#financialModal">
+
+        <div class="feature-icon">
+          <i class="fas fa-file-alt"></i>
+        </div>
+
+        <h3 id="financeBtn">💰 Financial Support</h3>
+
+        <p id="financialDesc">
+          Discover loan schemes, subsidy programs, and bank offers with detailed
+          information on interest rates and eligibility.
+        </p>
+
+        <span class="badge bg-success">Loans</span>
+        <span class="badge bg-primary">Subsidies</span>
+      </a>
+    </div>
+
+    <!-- Insurance -->
+    <div class="col-md-4">
+      <a href="javascript:void(0)" class="feature-card"
+   data-bs-toggle="modal" data-bs-target="#insuranceModal">
+
+
+        <div class="feature-icon">
+          <i class="fas fa-shield-alt"></i>
+        </div>
+
+        <h3 id="insuranceBtn">🛡️ Insurance</h3>
+
+        <p id="insuranceDesc">
+          Get details about crop insurance, accident coverage, and life insurance
+          schemes to protect farmers against unexpected risks.
+        </p>
+
+        <span class="badge bg-success">Crop</span>
+        <span class="badge bg-primary">Safety</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== QUICK LINKS ===== -->
+<div class="container quick-links">
+  <h2 class="section-title text-center" id="quickAccessTitle">Quick Access</h2>
+
+  <div class="row g-3">
+
+    <div class="col-md-6">
+      <a href="#" class="link-card">
+        <i class="fas fa-seedling link-icon"></i>
+        <div class="link-content">
+          <h5 id="pmKisanTitle">PM-KISAN Scheme</h5>
+          <p id="pmKisanDesc">Direct income support of ₹6000/year</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6">
+      <a href="#" class="link-card">
+        <i class="fas fa-umbrella link-icon"></i>
+        <div class="link-content">
+          <h5 id="cropInsuranceTitle">Crop Insurance</h5>
+          <p id="cropInsuranceDesc">PMFBY - Secure your crops</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6">
+      <a href="#" class="link-card">
+        <i class="fas fa-credit-card link-icon"></i>
+        <div class="link-content">
+          <h5 id="kccTitle">Kisan Credit Card</h5>
+          <p id="kccDesc">Easy loans at low interest rates</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-6">
+      <a href="#" class="link-card">
+        <i class="fas fa-water link-icon"></i>
+        <div class="link-content">
+          <h5 id="irrigationTitle">Micro Irrigation Fund</h5>
+          <p id="irrigationDesc">Subsidy for drip/sprinkler systems</p>
+        </div>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== TESTIMONIALS ===== -->
+<div class="container mb-5">
+  <h2 class="section-title text-center" id="happyFarmersTitle">Happy Farmers</h2>
+
+  <div class="row g-4">
+
+    <div class="col-md-4">
+      <div class="card testimonial-card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <img src="images/ram.png" class="rounded-circle farmer-img" alt="Farmer" />
+          <h5 id="farmer1Name">Ram Singh</h5>
+          <p class="text-muted" id="testimonial1">
+            "Got PM-KISAN benefits easily through this portal"
+          </p>
+          <div class="text-warning">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card testimonial-card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <img src="images/shantabai.png" class="rounded-circle farmer-img" alt="Farmer" />
+          <h5 id="farmer2Name">Shanta Bai</h5>
+          <p class="text-muted" id="testimonial2">
+            "Understood KCC loan process in my language"
+          </p>
+          <div class="text-warning">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card testimonial-card h-100 border-0 shadow-sm">
+        <div class="card-body text-center">
+          <img src="images/farmer.png" class="rounded-circle farmer-img" alt="Farmer" />
+          <h5 id="farmer3Name">Rajesh Patil</h5>
+          <p class="text-muted" id="testimonial3">
+            "Applied for subsidy in Marathi, very helpful"
+          </p>
+          <div class="text-warning">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ===== Government Scheme Modal Popup ===== -->
+<div class="modal fade" id="schemeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+
+      <div class="modal-header bg-success text-white" style="border-radius: 18px 18px 0 0;">
+        <h5 class="modal-title fw-bold">🌾 Farmer Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <p class="text-muted mb-3">
+          Enter your details to view schemes based on your location.
+        </p>
+
+        <form id="schemeForm">
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Farmer Name</label>
+    <input type="text" class="form-control" id="farmerName" placeholder="Enter your name" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Location (District/Village)</label>
+    <input type="text" class="form-control" id="farmerLocation" placeholder="Enter district or village" required>
+  </div>
+
+  <!-- Dropdown -->
+  <div class="mb-3">
+  <label class="form-label fw-semibold">Scheme Type</label>
+  <select class="form-select" id="schemeType" required>
+    <option value="" selected disabled>-- Select Scheme Type --</option>
+    <option value="Central">Central</option>
+    <option value="Maharashtra">State (Maharashtra)</option>
+    <option value="All">All</option>
+  </select>
+</div>
+
+  <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+    Submit & View Schemes
+  </button>
+
+</form>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Insurance Scheme Modal Popup ===== -->
+<div class="modal fade" id="insuranceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+
+      <div class="modal-header bg-success text-white" style="border-radius: 18px 18px 0 0;">
+        <h5 class="modal-title fw-bold">🛡️ Insurance Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <p class="text-muted mb-3">
+          Enter your details to view suitable insurance schemes.
+        </p>
+
+        <form id="insuranceForm">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Farmer Name</label>
+            <input type="text" class="form-control" id="insuranceFarmerName" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Location (District/Village)</label>
+            <input type="text" class="form-control" id="insuranceLocation" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Insurance Type</label>
+            <select class="form-select" id="insuranceType" required>
+              <option value="" disabled selected>-- Select Insurance Type --</option>
+              <option value="Central">Central</option>
+              <option value="Maharashtra">State (Maharashtra)</option>
+              <option value="All">All</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+            Submit & View Insurance
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById("insuranceForm").addEventListener("submit", function (e) {
+  e.preventDefault(); // stop form reload
+
+  // (Optional) You can read values if needed later
+  const name = document.getElementById("insuranceFarmerName").value;
+  const location = document.getElementById("insuranceLocation").value;
+  const type = document.getElementById("insuranceType").value;
+
+  // Redirect to insurance page
+  window.location.href = "insurance.html";
+});
+</script>
+
+<!-- ===== Financial Support Modal Popup ===== -->
+<div class="modal fade" id="financialModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+
+      <div class="modal-header bg-success text-white" style="border-radius: 18px 18px 0 0;">
+        <h5 class="modal-title fw-bold">💰 Financial Support Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <p class="text-muted mb-3">
+          Enter your details to view suitable financial support schemes.
+        </p>
+
+        <form id="financialForm">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Farmer Name</label>
+            <input type="text" class="form-control" id="financialFarmerName" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Location (District/Village)</label>
+            <input type="text" class="form-control" id="financialLocation" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Financial Support Type</label>
+            <select class="form-select" id="financialType" required>
+              <option value="" disabled selected>-- Select Support Type --</option>
+              <option value="Central">Central</option>
+              <option value="Maharashtra">State (Maharashtra)</option>
+              <option value="All">All</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+            Submit & View Financial Support
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById("financialForm").addEventListener("submit", function (e) {
+  e.preventDefault(); // stop form reload
+
+  // (Optional) read values
+  const name = document.getElementById("financialFarmerName").value;
+  const location = document.getElementById("financialLocation").value;
+  const type = document.getElementById("financialType").value;
+
+  // Redirect to financial support page
+  window.location.href = "financial.html";
+});
+</script>
+
+
+<!-- ===== FOOTER ===== -->
+<footer class="bg-dark text-white py-4 mt-5">
+  <div class="container">
+    <div class="row">
+
+      <div class="col-md-6">
+        <h5>Kisan Sahayata</h5>
+        <p id="footerTagline">Your trusted partner in agricultural growth</p>
+      </div>
+
+      <div class="col-md-3">
+        <h6>Quick Links</h6>
+        <ul class="list-unstyled">
+          <li><a href="javascript:void(0)" class="text-white-50" data-bs-toggle="modal" data-bs-target="#aboutModal">About Us</a></li>
+          <li><a href="javascript:void(0)" class="text-white-50" data-bs-toggle="modal" data-bs-target="#contactModal">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-3">
+        <h6 id="followUsText">Follow Us</h6>
+        <div class="social-links">
+  <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="text-white-50 me-2">
+    <i class="fab fa-facebook fa-lg"></i>
+  </a>
+  <a href="https://x.com/" target="_blank" rel="noopener noreferrer" class="text-white-50 me-2">
+    <i class="fab fa-twitter fa-lg"></i>
+  </a>
+  <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" class="text-white-50">
+    <i class="fab fa-youtube fa-lg"></i>
+  </a>
+</div>
+      </div>
+
+    </div>
+
+    <hr class="bg-secondary" />
+
+    <div class="text-center">
+      <small id="rightsText">© 2026 Kisan Sahayata. All rights reserved.</small>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== CHATBOT BUTTON ===== -->
+<button class="chatbot-btn" id="chatbotButton">
+  <i class="fas fa-robot"></i>
+</button>
+<!-- ===== CHATBOX POPUP ===== -->
+<div id="chatbox" class="chatbox">
+  <!-- CHAT HEADER -->
+  <div class="chat-header">
+    <span>🤖 Kisan Assistant</span>
+    <button id="closeChat" class="close-btn">&times;</button>
+  </div>
+
+  <!-- CHAT BODY -->
+  <div class="chat-body" id="chatBody">
+    <!-- Initial bot greeting -->
+    <div class="chat-message bot">
+      Hello! I am your Kisan Assistant. I can guide you with schemes, loans, subsidies, and crop insurance.
+    </div>
+
+    <!-- QUICK ACTION BUTTONS -->
+    <div class="chat-quick-buttons">
+      <button class="quick-btn" data-action="schemes">📋 View Schemes</button>
+      <button class="quick-btn" data-action="loans">💰 Check Loans</button>
+      <button class="quick-btn" data-action="subsidy">💸 Subsidies Info</button>
+      <button class="quick-btn" data-action="insurance">🌾 Crop Insurance</button>
+    </div>
+  </div>
+
+  <!-- CHAT FOOTER -->
+  <div class="chat-footer">
+    <input type="text" id="chatInput" placeholder="Type your question..." />
+    <button id="sendChat"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- ===== ABOUT US MODAL ===== -->
+<div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+      <div class="modal-header bg-success text-white" style="border-radius: 18px 18px 0 0;">
+        <h5 class="modal-title fw-bold">ℹ️ About Us</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p>
+          <strong>Kisan Sahayata</strong> is a comprehensive platform designed to empower farmers with information
+          about government schemes, financial support, crop insurance, and best agricultural practices. 
+          We aim to simplify access to benefits and ensure farmers are informed in their local language.
+        </p>
+        <p>
+          Our vision is to create a digitally inclusive ecosystem for Indian farmers, 
+          connecting them with resources and tools for sustainable agriculture.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success fw-bold" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONTACT US MODAL ===== -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+      <div class="modal-header bg-success text-white" style="border-radius: 18px 18px 0 0;">
+        <h5 class="modal-title fw-bold">📞 Contact Us</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p>
+          We’re here to help farmers access government schemes, loans, subsidies, and insurance information.
+        </p>
+
+        <ul class="list-unstyled">
+          <li><strong>Address:</strong> 123 Kisan Bhavan, Pune, Maharashtra, India</li>
+          <li><strong>Phone:</strong> +91 98765 43210</li>
+          <li><strong>Email:</strong> support@kisansahayata.in</li>
+        </ul>
+
+        <div class="mt-3">
+          <h6>Follow Us</h6>
+          <a href="https://www.facebook.com/" target="_blank" class="me-2 text-success">
+              <i class="fab fa-facebook fa-lg"></i>
+          </a>
+          <a href="https://x.com/" target="_blank" class="me-2 text-success">
+              <i class="fab fa-twitter fa-lg"></i>
+          </a>
+          <a href="https://www.youtube.com/" target="_blank" class="text-success">
+              <i class="fab fa-youtube fa-lg"></i>
+          </a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ===== BOOTSTRAP JS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ===== WORKING FORM SCRIPT ===== -->
+<script>
+  document.getElementById("schemeForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const schemeType = document.getElementById("schemeType").value;
+
+  localStorage.setItem("schemeType", schemeType);
+
+  window.location.href = "govscheme.html";
+});
+
+</script>
+
+<!--script for handling for contact and about us page-->
+<script>
+  // ===== ABOUT US MODAL =====
+  document.querySelectorAll('[data-bs-target="#aboutModal"]').forEach(link => {
+    link.addEventListener('click', () => {
+      const aboutModalEl = document.getElementById('aboutModal');
+      const aboutModal = new bootstrap.Modal(aboutModalEl);
+      aboutModal.show();
+    });
+  });
+
+  // ===== CONTACT US MODAL =====
+  document.querySelectorAll('[data-bs-target="#contactModal"]').forEach(link => {
+    link.addEventListener('click', () => {
+      const contactModalEl = document.getElementById('contactModal');
+      const contactModal = new bootstrap.Modal(contactModalEl);
+      contactModal.show();
+    });
+  });
+
+  // ===== REDIRECT TO INDEX.HTML AFTER CLOSING MODALS =====
+  const redirectOnClose = (modalId) => {
+    const modalEl = document.getElementById(modalId);
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      if (!window.location.href.endsWith('index.html')) {
+        window.location.href = 'index.html';
+      } else {
+        // optional: reload page to reset state/scroll
+        window.location.reload();
+      }
+    });
+  };
+
+  redirectOnClose('aboutModal');
+  redirectOnClose('contactModal');
+
+  // ===== OPTIONAL: Close modal on ESC key (Bootstrap already handles by default) =====
+  document.addEventListener('keydown', (e) => {
+    if (e.key === "Escape") {
+      const modals = ['aboutModal', 'contactModal'];
+      modals.forEach(id => {
+        const modalEl = document.getElementById(id);
+        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (bsModal) bsModal.hide();
+      });
+    }
+  });
+
+  // ===== OPTIONAL: Smooth scroll to top when modal opens =====
+  const allModals = document.querySelectorAll('.modal');
+  allModals.forEach(modal => {
+    modal.addEventListener('shown.bs.modal', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+</script>
+
+
+
+<!-- Custom Chatbot JS -->
+<script src="js/chatbot.js"></script>
+
+</body>
+</html>
