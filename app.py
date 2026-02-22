@@ -4,6 +4,9 @@ from datetime import datetime
 import os, json, requests
 
 app = Flask(__name__)
+# Google Gemini API
+GEMINI_API_KEY = "AIzaSyBC5O9KrKJkNDpE6aElJK6Anz7n9DaNEB0"
+GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText"
 app.secret_key = 'kisansahayata_secret_2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///kisansahayata.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -338,98 +341,533 @@ def api_schemes():
 def api_scheme_detail(sid):
     return jsonify(Scheme.query.get_or_404(sid).to_dict())
 
+# ─── HELPER: Call Gemini API ────────────────────────────────────────────────────
+
+def ask_gemini(user_message, context=""):
+    system_prompt = (
+        "You are Kisan Mitra, a helpful assistant for Indian farmers. "
+        "Answer questions about government schemes, financial assistance, crop insurance, "
+        "farming practices, and agricultural policies. "
+        "Keep answers concise, practical, and farmer-friendly. "
+        "If someone greets you or asks how you are, respond warmly and naturally. "
+        "If you don't know something specific, guide the farmer to contact the local agriculture office."
+    )
+
+    full_prompt = system_prompt
+    if context:
+        full_prompt += f"\n\nRelevant scheme info:\n{context}"
+    full_prompt += f"\n\nUser message: {user_message}"
+
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": full_prompt}]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 512
+        }
+    }
+
+    try:
+        response = requests.post(
+            f"{GEMINI_ENDPOINT}?key={GEMINI_API_KEY}",
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=10
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return data['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini error {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Gemini call failed: {e}")
+        return None
+
+
+# ─── HELPER: Translate via LibreTranslate ──────────────────────────────────────
+
+def translate_text(text, target_lang):
+    if not target_lang or target_lang in ('en', 'english'):
+        return text
+    try:
+        payload = {
+            "q": text,
+            "source": "en",
+            "target": target_lang,
+            "format": "text"
+        }
+        if LIBRE_TRANSLATE_KEY:
+            payload["api_key"] = LIBRE_TRANSLATE_KEY
+        r = requests.post(LIBRE_TRANSLATE_URL, json=payload, timeout=5)
+        if r.status_code == 200:
+            return r.json().get('translatedText', text)
+    except Exception as e:
+        print(f"Translation failed: {e}")
+    return text
+
+
+# ─── CHATBOT ROUTE ─────────────────────────────────────────────────────────────
+def ask_gemini(user_message, context=""):
+    system_prompt = (
+        "You are Kisan Mitra, a helpful assistant for Indian farmers. "
+        "Answer questions about government schemes, financial assistance, crop insurance, "
+        "farming practices, and agricultural policies. "
+        "When DB scheme info is provided in context, use it to give precise answers. "
+        "For general farming questions, answer from your own knowledge. "
+        "If someone greets you or asks how you are, respond warmly and naturally. "
+        "Keep answers concise, practical, and farmer-friendly. "
+        "Always respond in the same language the user is writing in."
+    )
+
+    full_prompt = system_prompt
+    if context:
+        full_prompt += f"\n\n--- Relevant Scheme Info from Database ---\n{context}\n--- End ---"
+    full_prompt += f"\n\nFarmer: {user_message}\nKisan Mitra:"
+
+    payload = {
+        "contents": [{"parts": [{"text": full_prompt}]}],
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 512}
+    }
+
+    try:
+        response = requests.post(
+            f"{GEMINI_ENDPOINT}?key={GEMINI_API_KEY}",
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=10
+        )
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini error {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Gemini call failed: {e}")
+        return None
+
+
+def translate_text(text, target_lang):
+    if not target_lang or target_lang in ('en', 'english'):
+        return text
+    try:
+        payload = {"q": text, "source": "en", "target": target_lang, "format": "text"}
+        if LIBRE_TRANSLATE_KEY:
+            payload["api_key"] = LIBRE_TRANSLATE_KEY
+        r = requests.post(LIBRE_TRANSLATE_URL, json=payload, timeout=5)
+        if r.status_code == 200:
+            return r.json().get('translatedText', text)
+    except Exception as e:
+        print(f"Translation failed: {e}")
+    return text
+
+
+def find_scheme_in_message(msg_lower):
+    """Search DB for any scheme whose title/tags appear in the user message."""
+    schemes = Scheme.query.filter_by(status='active').all()
+
+    # 1. Exact title match
+    for s in schemes:
+        if s.title.lower() in msg_lower:
+            return s, schemes
+
+    # 2. Keyword match using tags and title words
+    STOP_WORDS = {
+        'how', 'are', 'you', 'the', 'what', 'who', 'why', 'when', 'where',
+        'can', 'does', 'did', 'was', 'were', 'has', 'have', 'had', 'will',
+        'would', 'could', 'should', 'tell', 'about', 'please', 'help', 'get',
+        'for', 'and', 'with', 'your', 'this', 'that', 'from', 'they', 'there',
+        'their', 'much', 'many', 'some', 'any', 'all', 'not', 'but', 'yes',
+        'okay', 'which', 'give', 'show', 'want', 'need', 'know', 'its', 'than',
+        'apply', 'it', 'is', 'to', 'me', 'my', 'do', 'be', 'of', 'in', 'on',
+        'documents', 'document', 'required', 'eligibility', 'eligible', 'benefit',
+        'benefits', 'scheme', 'schemes', 'yojana', 'detail', 'details', 'info'
+    }
+    words = [w for w in msg_lower.split() if len(w) > 3 and w not in STOP_WORDS]
+
+    best_match = None
+    best_score = 0
+    for s in schemes:
+        combined = f"{s.title} {s.tags}".lower()
+        score = sum(1 for w in words if w in combined)
+        if score > best_score:
+            best_score = score
+            best_match = s
+
+    if best_score >= 1:
+        return best_match, schemes
+
+    return None, schemes
+
+
+def detect_intent(msg_lower):
+    """Detect what the user is asking about a scheme."""
+    if any(w in msg_lower for w in ['apply', 'application', 'register', 'registration', 'kaise apply', 'apply kare']):
+        return 'how_to_apply'
+    if any(w in msg_lower for w in ['document', 'documents', 'required', 'papers', 'kagaz', 'dastavej']):
+        return 'documents'
+    if any(w in msg_lower for w in ['eligible', 'eligibility', 'who can', 'paatra', 'qualification']):
+        return 'eligibility'
+    if any(w in msg_lower for w in ['benefit', 'benefits', 'money', 'amount', 'laabh', 'fayda', 'how much']):
+        return 'benefits'
+    if any(w in msg_lower for w in ['deadline', 'last date', 'end date', 'expiry', 'kab tak']):
+        return 'deadline'
+    if any(w in msg_lower for w in ['phone', 'helpline', 'contact', 'number', 'call']):
+        return 'contact'
+    if any(w in msg_lower for w in ['link', 'website', 'url', 'portal', 'online']):
+        return 'url'
+    return 'full_detail'  # default: show everything
+
+
+# ─── HELPER: Call Gemini API ────────────────────────────────────────────────────
+
+def ask_gemini(user_message, context=""):
+    system_prompt = (
+        "You are Kisan Mitra, a helpful assistant for Indian farmers. "
+        "Answer ANY question the farmer asks — whether it's about farming schemes, "
+        "general knowledge, geography, weather, crops, or daily life. "
+        "When DB scheme info is provided, use it for precise answers. "
+        "For all other questions, answer from your own knowledge confidently. "
+        "If someone greets you or asks how you are, respond warmly. "
+        "Keep answers concise and farmer-friendly. "
+        "Always respond in the same language the user writes in."
+    )
+
+    full_prompt = system_prompt
+    if context:
+        full_prompt += f"\n\n--- Database Info ---\n{context}\n--- End ---"
+    full_prompt += f"\n\nFarmer: {user_message}\nKisan Mitra:"
+
+    payload = {
+        "contents": [{"parts": [{"text": full_prompt}]}],
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 512}
+    }
+
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        response = requests.post(
+            url,
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=15
+        )
+        if response.status_code == 200:
+            result = response.json()
+            return result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini error {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        print(f"Gemini call failed: {e}")
+        return None
+
+
+# ─── HELPER: Translate ──────────────────────────────────────────────────────────
+
+def translate_text(text, target_lang):
+    if not target_lang or target_lang in ('en', 'english'):
+        return text
+    try:
+        payload = {"q": text, "source": "en", "target": target_lang, "format": "text"}
+        if LIBRE_TRANSLATE_KEY:
+            payload["api_key"] = LIBRE_TRANSLATE_KEY
+        r = requests.post(LIBRE_TRANSLATE_URL, json=payload, timeout=5)
+        if r.status_code == 200:
+            return r.json().get('translatedText', text)
+    except Exception as e:
+        print(f"Translation failed: {e}")
+    return text
+
+
+# ─── HELPER: Find scheme in message ────────────────────────────────────────────
+
+def find_scheme_in_message(msg_lower, active_only=True):
+    """Returns best matching scheme from DB based on title/tags keywords."""
+    status_filter = 'active' if active_only else None
+    if status_filter:
+        schemes = Scheme.query.filter_by(status='active').all()
+    else:
+        schemes = Scheme.query.all()
+
+    # 1. Exact title match
+    for s in schemes:
+        if s.title.lower() in msg_lower:
+            return s, schemes
+
+    # 2. Keyword match
+    STOP_WORDS = {
+        'how', 'are', 'you', 'the', 'what', 'who', 'why', 'when', 'where',
+        'can', 'does', 'did', 'was', 'were', 'has', 'have', 'had', 'will',
+        'would', 'could', 'should', 'tell', 'about', 'please', 'help', 'get',
+        'for', 'and', 'with', 'your', 'this', 'that', 'from', 'they', 'there',
+        'their', 'much', 'many', 'some', 'any', 'all', 'not', 'but', 'yes',
+        'okay', 'which', 'give', 'show', 'want', 'need', 'know', 'its', 'than',
+        'apply', 'it', 'is', 'to', 'me', 'my', 'do', 'be', 'of', 'in', 'on',
+        'documents', 'document', 'required', 'eligibility', 'eligible', 'benefit',
+        'benefits', 'scheme', 'schemes', 'yojana', 'detail', 'details', 'info',
+        'inactive', 'active', 'total', 'list', 'show', 'all'
+    }
+    words = [w for w in msg_lower.split() if len(w) > 3 and w not in STOP_WORDS]
+
+    best_match = None
+    best_score = 0
+    for s in schemes:
+        combined = f"{s.title} {s.tags}".lower()
+        score = sum(1 for w in words if w in combined)
+        if score > best_score:
+            best_score = score
+            best_match = s
+
+    if best_score >= 1:
+        return best_match, schemes
+
+    return None, schemes
+
+
+# ─── HELPER: Detect intent ──────────────────────────────────────────────────────
+
+def detect_intent(msg_lower):
+    """Detect what the user wants to know about a scheme."""
+    if any(w in msg_lower for w in ['apply', 'application', 'register', 'registration', 'kaise apply', 'apply kare', 'how to']):
+        return 'how_to_apply'
+    if any(w in msg_lower for w in ['document', 'documents', 'required', 'papers', 'kagaz', 'dastavej']):
+        return 'documents'
+    if any(w in msg_lower for w in ['eligible', 'eligibility', 'who can', 'paatra', 'qualification']):
+        return 'eligibility'
+    if any(w in msg_lower for w in ['benefit', 'benefits', 'money', 'amount', 'laabh', 'fayda', 'how much']):
+        return 'benefits'
+    if any(w in msg_lower for w in ['deadline', 'last date', 'end date', 'expiry', 'kab tak']):
+        return 'deadline'
+    if any(w in msg_lower for w in ['phone', 'helpline', 'contact', 'number', 'call']):
+        return 'contact'
+    if any(w in msg_lower for w in ['link', 'website', 'url', 'portal', 'online']):
+        return 'url'
+    return 'full_detail'
+
+
+# ─── CHATBOT ROUTE ─────────────────────────────────────────────────────────────
+
 @app.route('/api/chatbot', methods=['POST'])
 def chatbot():
     data = request.get_json()
-    user_message = data.get('message','').strip()
-    user_lang = data.get('lang','en')
+    user_message = data.get('message', '').strip()
+    user_lang    = data.get('lang', 'en').strip().lower()
 
     if not user_message:
         return jsonify({'reply': 'Please type a message.'})
 
-    # Translate to English for processing
-    msg_en = user_message
-    if user_lang != 'en':
-        try:
-            r = requests.post(LIBRE_TRANSLATE_URL, json={
-                'q': user_message, 'source': user_lang, 'target': 'en',
-                'format': 'text', 'api_key': LIBRE_TRANSLATE_KEY}, timeout=5)
-            if r.status_code == 200:
-                msg_en = r.json().get('translatedText', user_message)
-        except Exception:
-            pass
+    msg_lower = user_message.lower()
+    reply_en  = None
+    gemini_context = ""
 
-    msg_lower = msg_en.lower()
-    schemes = Scheme.query.filter_by(status='active').all()
+    # ── STEP 1: Greetings / thanks ─────────────────────────────────────────────
+    how_are_you = ['how are you', 'how r you', 'how are u', 'kaise ho', 'kaisa hai']
+    greetings   = ['hello', 'hi', 'namaste', 'good morning', 'good afternoon', 'good evening', 'hey']
+    thanks      = ['thank you', 'thanks', 'dhanyawad', 'shukriya']
 
-    # Keyword match in DB
-    matched = []
-    for s in schemes:
-        combined = f"{s.title} {s.tags} {s.description}".lower()
-        words = [w for w in msg_lower.split() if len(w) > 2]
-        if any(w in combined for w in words):
-            matched.append(s)
+    if any(p in msg_lower for p in how_are_you):
+        reply_en = (
+            "I'm doing great, thank you for asking! 😊 "
+            "I'm Kisan Mitra, always ready to help farmers.\n"
+            "How can I assist you today? 🌾"
+        )
+    elif msg_lower.strip() in greetings or (len(msg_lower.split()) <= 2 and any(g in msg_lower for g in greetings)):
+        reply_en = (
+            "🙏 Namaskar! I am Kisan Mitra, your farming assistant.\n"
+            "I can help you with:\n"
+            "• Government Schemes\n"
+            "• Financial Assistance & Loans\n"
+            "• Crop Insurance\n\n"
+            "How can I help you today?"
+        )
+    elif any(t in msg_lower for t in thanks):
+        reply_en = "You're welcome! Feel free to ask anything about farming schemes. 🌾"
 
-    # Build English reply
-    if any(k in msg_lower for k in ['hello','hi','namaste','namaskar','start','help']):
-        reply_en = ("Namaskar! I am Kisan Mitra, your farming assistant.\n\n"
-                    "I can help you find:\n- Government Schemes\n- Financial Support & Loans\n- Insurance Schemes\n\n"
-                    "Try asking:\n- What is PM-KISAN?\n- Crop insurance scheme\n- KCC loan\n- Maharashtra farmer schemes")
-    elif any(k in msg_lower for k in ['thank','thanks','dhanyawad']):
-        reply_en = "You're welcome! Feel free to ask anything about farming schemes."
-    elif matched:
-        if len(matched) == 1:
-            s = matched[0]
-            reply_en = (f"{s.title}\n\n{s.description}\n\n"
-                        f"Eligibility: {s.eligibility}\n"
-                        f"Benefits: {s.benefits}\n"
-                        f"Helpline: {s.phone or 'N/A'}\n"
-                        f"Apply: {s.official_url or 'Contact agriculture office'}")
-        else:
-            names = "\n".join([f"- {s.title} ({s.category.upper()})" for s in matched[:5]])
-            reply_en = f"Found {len(matched)} matching schemes:\n\n{names}\n\nAsk about any specific scheme for full details."
-    elif any(k in msg_lower for k in ['govt','government','sarkari','yojana']):
-        g = Scheme.query.filter_by(status='active',category='govt').limit(3).all()
-        reply_en = "Active Government Schemes:\n" + "\n".join([f"- {s.title}" for s in g]) + "\n\nAsk me for details!"
-    elif any(k in msg_lower for k in ['loan','finance','financial','money','paise']):
-        f = Scheme.query.filter_by(status='active',category='financial').limit(3).all()
-        reply_en = "Financial Support Schemes:\n" + "\n".join([f"- {s.title}" for s in f]) + "\n\nAsk me for details!"
-    elif any(k in msg_lower for k in ['insurance','bima','crop loss','fasal']):
-        i = Scheme.query.filter_by(status='active',category='insurance').limit(3).all()
-        reply_en = "Insurance Schemes:\n" + "\n".join([f"- {s.title}" for s in i]) + "\n\nAsk me for details!"
-    elif any(k in msg_lower for k in ['maharashtra','state','rajya']):
-        m = Scheme.query.filter_by(status='active',scheme_type='Maharashtra').limit(4).all()
-        reply_en = "Maharashtra State Schemes:\n" + "\n".join([f"- {s.title}" for s in m]) + "\n\nAsk for full details!"
+    # ── STEP 2: Count / stats queries (FIXED for inactive/active/category) ──────
+    if not reply_en:
+        import re
+        is_count_query = bool(re.search(
+            r'(how many|count|total|number of).*(scheme|yojana)|'
+            r'(scheme|yojana).*(how many|count|total)',
+            msg_lower
+        ))
+
+        if is_count_query:
+            # Detect active / inactive / all
+            if 'inactive' in msg_lower:
+                status_filter = 'inactive'
+                label = 'inactive'
+            elif 'active' in msg_lower and 'inactive' not in msg_lower:
+                status_filter = 'active'
+                label = 'active'
+            else:
+                status_filter = None
+                label = 'total'
+
+            # Detect category
+            category = None
+            if 'insurance' in msg_lower:
+                category = 'insurance'
+            elif 'financial' in msg_lower or 'loan' in msg_lower or 'credit' in msg_lower:
+                category = 'financial'
+            elif 'government' in msg_lower or 'govt' in msg_lower:
+                category = 'govt'
+
+            # Build query
+            q = Scheme.query
+            if status_filter:
+                q = q.filter_by(status=status_filter)
+            if category:
+                q = q.filter_by(category=category)
+            count = q.count()
+
+            cat_label = f"{category} " if category else ""
+            reply_en = f"There are <strong>{count}</strong> {label} {cat_label}schemes in the system."
+
+    # ── STEP 3: List schemes query ─────────────────────────────────────────────
+    if not reply_en:
+        is_list_query = bool(re.search(
+            r'(list|show|display|give).*(scheme|yojana)|(all).*(scheme|yojana)',
+            msg_lower
+        ))
+
+        if is_list_query:
+            status_filter = 'inactive' if 'inactive' in msg_lower else 'active'
+            category = None
+            if 'insurance' in msg_lower:
+                category = 'insurance'
+            elif 'financial' in msg_lower or 'loan' in msg_lower:
+                category = 'financial'
+            elif 'government' in msg_lower or 'govt' in msg_lower:
+                category = 'govt'
+
+            q = Scheme.query.filter_by(status=status_filter)
+            if category:
+                q = q.filter_by(category=category)
+            schemes_list = q.all()
+
+            if schemes_list:
+                names = "\n".join([
+                    f"• <strong>{s.title}</strong> ({s.category.upper()} – {s.scheme_type})"
+                    for s in schemes_list
+                ])
+                cat_label = f"{category} " if category else ""
+                reply_en = (
+                    f"<strong>📋 {status_filter.capitalize()} {cat_label}Schemes ({len(schemes_list)}):</strong>\n\n"
+                    f"{names}\n\n"
+                    f"Ask me about any specific scheme for full details."
+                )
+            else:
+                reply_en = f"No {status_filter} schemes found."
+
+    # ── STEP 4: Smart DB lookup with intent detection ──────────────────────────
+    if not reply_en:
+        matched_scheme, all_schemes = find_scheme_in_message(msg_lower)
+        intent = detect_intent(msg_lower)
+
+        if matched_scheme:
+            docs = json.loads(matched_scheme.documents) if matched_scheme.documents else []
+            faqs = json.loads(matched_scheme.faqs) if matched_scheme.faqs else []
+
+            if intent == 'how_to_apply':
+                reply_en = (
+                    f"<strong>📝 How to Apply – {matched_scheme.title}</strong>\n\n"
+                    f"{matched_scheme.how_to_apply}\n\n"
+                    f"<strong>📄 Documents Required:</strong>\n"
+                    + "\n".join([f"• {d}" for d in docs]) +
+                    f"\n\n<strong>📞 Helpline:</strong> {matched_scheme.phone or 'N/A'}\n"
+                    f"<strong>🌐 Portal:</strong> {matched_scheme.official_url or 'Visit nearest agriculture office'}"
+                )
+            elif intent == 'documents':
+                reply_en = (
+                    f"<strong>📄 Documents Required – {matched_scheme.title}</strong>\n\n"
+                    + "\n".join([f"• {d}" for d in docs]) +
+                    "\n\n<em>Make sure all documents are self-attested before applying.</em>"
+                )
+            elif intent == 'eligibility':
+                reply_en = (
+                    f"<strong>✅ Eligibility – {matched_scheme.title}</strong>\n\n"
+                    f"{matched_scheme.eligibility}"
+                )
+            elif intent == 'benefits':
+                reply_en = (
+                    f"<strong>💰 Benefits – {matched_scheme.title}</strong>\n\n"
+                    f"{matched_scheme.benefits}"
+                )
+            elif intent == 'deadline':
+                reply_en = (
+                    f"<strong>📅 Deadline – {matched_scheme.title}</strong>\n\n"
+                    f"Start Date: {matched_scheme.start_date or 'N/A'}\n"
+                    f"End Date: {matched_scheme.end_date or 'N/A'}\n"
+                    f"Deadline: {matched_scheme.deadline or 'N/A'}"
+                )
+            elif intent == 'contact':
+                reply_en = (
+                    f"<strong>📞 Contact – {matched_scheme.title}</strong>\n\n"
+                    f"Helpline: {matched_scheme.phone or 'N/A'}\n"
+                    f"Official Portal: {matched_scheme.official_url or 'N/A'}"
+                )
+            elif intent == 'url':
+                reply_en = (
+                    f"<strong>🌐 Official Portal – {matched_scheme.title}</strong>\n\n"
+                    f"{matched_scheme.official_url or 'Please visit your nearest agriculture office.'}"
+                )
+            else:
+                reply_en = (
+                    f"<strong>📋 {matched_scheme.title}</strong> "
+                    f"<em>({matched_scheme.scheme_type} – {matched_scheme.category.upper()})</em>\n\n"
+                    f"{matched_scheme.description}\n\n"
+                    f"<strong>✅ Eligibility:</strong> {matched_scheme.eligibility}\n\n"
+                    f"<strong>💰 Benefits:</strong> {matched_scheme.benefits}\n\n"
+                    f"<strong>📝 How to Apply:</strong> {matched_scheme.how_to_apply}\n\n"
+                    f"<strong>📄 Documents:</strong>\n"
+                    + "\n".join([f"• {d}" for d in docs]) +
+                    f"\n\n<strong>📅 Deadline:</strong> {matched_scheme.deadline or 'N/A'}\n"
+                    f"<strong>📞 Helpline:</strong> {matched_scheme.phone or 'N/A'}\n"
+                    f"<strong>🌐 Portal:</strong> {matched_scheme.official_url or 'N/A'}"
+                )
+
+            # Build Gemini context from matched scheme
+            gemini_context = (
+                f"Scheme: {matched_scheme.title}\n"
+                f"Category: {matched_scheme.category}\n"
+                f"Description: {matched_scheme.description}\n"
+                f"Eligibility: {matched_scheme.eligibility}\n"
+                f"Benefits: {matched_scheme.benefits}\n"
+                f"How to Apply: {matched_scheme.how_to_apply}\n"
+                f"Documents: {', '.join(docs)}\n"
+                f"Deadline: {matched_scheme.deadline}\n"
+                f"Helpline: {matched_scheme.phone}\n"
+                f"FAQs: {'; '.join(faqs)}"
+            )
+
+    # ── STEP 5: Gemini — handles everything not answered by DB ────────────────
+    if not reply_en:
+        # Pure Gemini answer (general knowledge, geography, farming tips, etc.)
+        gemini_reply = ask_gemini(user_message, context=gemini_context)
+        reply_en = gemini_reply or (
+            "Sorry, I couldn't connect right now. 😔\n"
+            "Please call helpline: <strong>1800-233-0222</strong>"
+        )
     else:
-        total = Scheme.query.filter_by(status='active').count()
-        reply_en = (f"I couldn't find an exact match. We have {total} active schemes.\n"
-                    "Try: 'PM-KISAN', 'crop insurance', 'KCC loan', 'Maharashtra schemes', 'loan schemes'")
+        # DB answered — add a short Gemini tip on top
+        gemini_tip = ask_gemini(
+            f"Give one very short helpful tip (1 sentence) about: {user_message}",
+            context=gemini_context
+        )
+        if gemini_tip:
+            reply_en += f"\n\n<strong>💡 Tip:</strong> {gemini_tip}"
 
-    # Translate reply back to user language
-    final_reply = reply_en
-    if user_lang != 'en':
-        try:
-            r = requests.post(LIBRE_TRANSLATE_URL, json={
-                'q': reply_en, 'source': 'en', 'target': user_lang,
-                'format': 'text', 'api_key': LIBRE_TRANSLATE_KEY}, timeout=5)
-            if r.status_code == 200:
-                final_reply = r.json().get('translatedText', reply_en)
-        except Exception:
-            final_reply = reply_en
+    # ── STEP 6: Translate ──────────────────────────────────────────────────────
+    if user_lang and user_lang not in ('en', 'english'):
+        final_reply = translate_text(reply_en, user_lang)
+    else:
+        final_reply = reply_en
 
-    return jsonify({'reply': final_reply, 'matched_count': len(matched)})
-
-@app.route('/api/translate', methods=['POST'])
-def translate_api():
-    data = request.get_json()
-    try:
-        r = requests.post(LIBRE_TRANSLATE_URL, json={
-            'q': data.get('q',''), 'source': data.get('source','en'),
-            'target': data.get('target','en'), 'format': 'text', 'api_key': LIBRE_TRANSLATE_KEY
-        }, timeout=5)
-        return jsonify(r.json())
-    except Exception as e:
-        return jsonify({'translatedText': data.get('q',''), 'error': str(e)})
+    return jsonify({'reply': final_reply})
 
 if __name__ == '__main__':
     with app.app_context():
